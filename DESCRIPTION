@@ -1,5 +1,5 @@
-Package: CCRstoAAC
-Title: CCRstoAAC
+Package: CCRStoAAC
+Title: CCRStoAAC
 Version: 0.0.0.9000
 Authors@R: 
     person("Marcia Anahi", "Hasenahuer", , "marcia.hasenahuer@gmail.com", role = c("aut", "cre"),
@@ -18,6 +18,9 @@ Imports:
       data.table,
       ensembldb,
       GenomicRanges,
+      magrittr,
+      usethis,
+      tibble,
       dplyr,
       tidyr,
       plyr,
