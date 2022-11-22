@@ -30,9 +30,10 @@ Before installing this package, ensure you have the following:
   - A Unix based OS: by now this package will only run in this systems
   - [R](https://cran.r-project.org/) version >= 4.0.X. Full list of R packages is in the DESCRIPTION file ('Imports') 
   - [Blastp](https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&PAGE_TYPE=BlastDocs&DOC_TYPE=Download). On Ubuntu/Debian systems you can get it as part of the ncbi-blast+ suite:
+  
   ``sudo apt-get install ncbi-blast+``
   
-  No need to create any local database of sequences! as the specific Human protein sequences will be downloaded on-demand by this package.
+   No need to create any local database of sequences! as the specific Human protein sequences will be downloaded on-demand by this package.
 
 ### How to install
 
@@ -88,17 +89,19 @@ From R, run the following commands:
 
 The following files are essential, are all provided in the ``data/`` folder and automatically loaded by the package with default parameters
 
-  - The CCRs raw file, this is the output from running the CCRs model pipeline  [GitHub](https://github.com/quinlan-lab/ccr). We provide this file, obtained using gnomAD3.0 (GRCh38) variants and annotations of VEP101. Here you will find in one file the constraint for autosomes and X chromosome, although they were obtained separatelly ( please, refer to [Havrilla et al., 2019, Nature Genetics](https://doi.org/10.1038%2Fs41588-018-0294-6) and [GitHub](https://github.com/quinlan-lab/ccr) for further details) 
-  ``data/rawCCRs/gnomad3_0/vep101/sort_weightedresiduals-cpg-synonymous-novariant.txt.gz``
+  - The CCRs raw file, this is the output from running the CCRs model pipeline  ([GitHub](https://github.com/quinlan-lab/ccr)). We provide this file, obtained using gnomAD3.0 (GRCh38) variants and annotations with VEP101. Here you will find in one file the constraint for autosomes and X chromosome, although they were obtained separately ( please, refer to [Havrilla et al., 2019, Nature Genetics](https://doi.org/10.1038%2Fs41588-018-0294-6) and [GitHub](https://github.com/quinlan-lab/ccr) for further details) 
+  
+  ``./data/rawCCRs/gnomad3_0/vep101/sort_weightedresiduals-cpg-synonymous-novariant.txt.gz``
 
   - A file with the mapping table that provides the correspondence of identifiers between [UniProtKB](https://www.uniprot.org/) (version 10-2020) and [ENSEMBL](https://www.ensembl.org/index.html) (version 101):
-  ``data/mapping_tables/ensembl_uniprot_MANE_metrics_07102020.tsv.gz``
-  Here you can also find the identification of [MANE transcripts](https://www.ncbi.nlm.nih.gov/refseq/MANE/) and the [gene constraint scores](https://gnomad.broadinstitute.org/help/constraint) of gnomAD2.1 for genes and transcript, when available.
+  
+  ``./data/mapping_tables/ensembl_uniprot_MANE_metrics_07102020.tsv.gz``
+    Here you can also find the identification of [MANE transcripts](https://www.ncbi.nlm.nih.gov/refseq/MANE/) and the [gene constraint scores](https://gnomad.broadinstitute.org/help/constraint) (i.e. pLI, OEUF, o/e, Z-scores) of gnomAD2.1 for genes and transcript, when available.
 
   - Pre-filtered and simplified GTF files from ENSEMBL (v101):
+  
   ``data/GTF101/Homo_sapiens.GRCh38.101.chr##.gtf.gz``
-
-  This is used to identify and select the protein coding [GENCODE basic transcripts](https://www.gencodegenes.org/human/) (version 35), a subset of representative transcripts for each human gene.
+    This is used to identify and select the protein coding [GENCODE basic transcripts](https://www.gencodegenes.org/human/) (version 35), a subset of representative transcripts for each human gene.
 
 ## Output files
 
