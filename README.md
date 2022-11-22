@@ -8,7 +8,7 @@ R package for mapping the Constrained Coding Regions (CCRs) in the Human genome 
 Constrained Coding Regions (CCRs) are focal regions in the Human coding genome depleted of protein changing variants (i.e. missense, stop gain/loss, frameshift indels) [Havrilla et al., 2019, Nature Genetics](https://doi.org/10.1038%2Fs41588-018-0294-6) ( [GitHub](https://github.com/quinlan-lab/ccr) ). These regions were originally identified using the whole exome sequencing data from large cohorts of healthy control populations aggregated in [gnomAD](https://gnomad.broadinstitute.org/) (The Genome Aggregation Database, version 2.0, GRCh37/hg19 reference genome, including 125.748 human exomes). 
 Here, we extended this by calculating the CCRs using gnomAD3.0 (GRCh38, 76.156  Human genomes) and mapping these regions to the amino acids in Human protein sequences of UniProtKB, via reference transcripts of Ensembl which are part of the [GENCODE basic transcripts](https://www.gencodegenes.org/human/) (version 35).
 
-
+In a separate [CCRStoAAC-output repository](https://github.com/marciaah/CCRStoAAC-output) you can find  a simplified output from mapping the CCRs to the amino acids in canonical proteins of UniProtKB (version 10-2020), plus extra information regarding gnomAD allele count and allele frequency, quality of regions, protein features and inter-species conservation.
  
 
 ## Citation
