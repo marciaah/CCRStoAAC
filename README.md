@@ -1,10 +1,10 @@
 # CCRStoAAC
--------------
+
 R package for mapping the Constrained Coding Regions (CCRs) in the Human genome to proteins
 
 
 ## Overview
-------------
+
 Constrained Coding Regions (CCRs) are focal regions in the Human coding genome depleted of protein changing variants (i.e. missense, stop gain/loss, frameshift indels) [Havrilla et al., 2019, Nature Genetics](https://doi.org/10.1038%2Fs41588-018-0294-6) ( [GitHub](https://github.com/quinlan-lab/ccr) ). These regions were originally identified using the whole exome sequencing data from large cohorts of healthy control populations aggregated in [gnomAD](https://gnomad.broadinstitute.org/) (The Genome Aggregation Database, version 2.0, GRCh37/hg19 reference genome, including 125.748 human exomes). 
 Here, we extended this by calculating the CCRs using gnomAD3.0 (GRCh38, 76.156  Human genomes) and mapping these regions to the amino acids in Human protein sequences of UniProtKB, via reference transcripts of Ensembl which are part of the [GENCODE basic transcripts](https://www.gencodegenes.org/human/) (version 35).
 
@@ -16,13 +16,13 @@ Here, we extended this by calculating the CCRs using gnomAD3.0 (GRCh38, 76.156  
 If you find this package useful for your work, please mention us: 
 
 **Manuscript in Press:**
+
 *'Mapping the Constrained Coding Regions in the human genome to their corresponding proteins'*,
 Marcia A. Hasenahuer, Alba Sanchis-Juan, Roman A. Laskowski, James A. Baker, James D. Stephenson, Christine A. Orengo,F Lucy Raymond, Janet M. Thornton.
 Available online 21 November 2022, 167892
 https://doi.org/10.1016/j.jmb.2022.167892
 
 ## Installation
-----------------
 
 ### Dependencies
 
@@ -44,29 +44,27 @@ From R, run the following commands:
 
 
 ## How to use
---------------
 
 #### Load the package
-``library(CCRStoAAC)``
+> ``library(CCRStoAAC)``
 
 #### Some examples on how to use this package:
 
 - Mapping CCRs for only one gene
- ``CCRStoAAC( gene="VPS4B" )``
+>  ``CCRStoAAC( gene="VPS4B" )``
  
- - Mapping CCRs for a list of three genes
- ``CCRStoAAC( gene="WDR7,VAPA,VPS4B", gnomad_version="gnomAD3_0")``
+- Mapping CCRs for a list of three genes
+> ``CCRStoAAC( gene="WDR7,VAPA,VPS4B", gnomad_version="gnomAD3_0")``
 
 - Mapping CCRs for a complete chromosome, specifying 10 processors to run in parallel and starting from a previous
  output file (i.e. ./out/gnomAD3_0/vep_101/aac_weightedresiduals-cpg-synonymous-novariant_18.tsv). Useful when a previous run had stopped (e.g. memory overload)
- ``CCRStoAAC( chromosome=18, nproc=10, keep=1 )``
+> ``CCRStoAAC( chromosome=18, nproc=10, keep=1 )``
 
 - Mapping of all genes in autosomes and X chromosome that have CCRs calculated
- ``CCRStoAAC()`` 
+> ``CCRStoAAC()`` 
 
 
 ## Full list of parameters
---------------------------
 
 - **gene**: Gene(s) of interest, comma separated. Not specifying triggers the mapping of all genes
 - **chromosome**: Only autosomes (1 to 22) and X chromosome are accepted. If not provided, will be obtained from the CCRs output file 
@@ -83,7 +81,6 @@ From R, run the following commands:
 
 
 ## Input files
----------------
 
 The following files are essential, are all provided in the ``data/`` folder and automatically loaded by the package with default parameters
 
@@ -100,7 +97,6 @@ The following files are essential, are all provided in the ``data/`` folder and 
   This is used to identify and select the protein coding [GENCODE basic transcripts](https://www.gencodegenes.org/human/) (version 35), a subset of representative transcripts for each human gene.
 
 ## Output files
-----------------
 
 The resulting dataframe with the mapping will not be returned by the function, but instead it will be dumped in one file by chromosome in ``./out/gnomAD3_0/vep_101/aac_weightedresiduals-cpg-synonymous-novariant_##.tsv``, where ##: chromosome name. This is to prevent R to crash, because it can take a significant amount of RAM memory to load the mapping all at once, depending on the number and length of genes that were requested to be mapped.
 

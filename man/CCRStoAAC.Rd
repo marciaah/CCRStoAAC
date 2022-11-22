@@ -61,7 +61,6 @@ External dependencies (non R libraries):
 \pkg{blastp, awk, grep, tr, sort}
 }
 \examples{
-
  Mapping CCRs for only one gene
  \code{CCRStoAAC( gene="VPS4B" )}
 
