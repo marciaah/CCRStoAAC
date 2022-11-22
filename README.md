@@ -87,7 +87,7 @@ From R, run the following commands:
 
 ## Input files
 
-The following files are essential, are all provided in the ``data/`` folder and automatically loaded by the package with default parameters
+The following files are essential, are all provided in the ``./data/`` folder and automatically loaded by the package with default parameters
 
   - The CCRs raw file, this is the output from running the CCRs model pipeline  ([GitHub](https://github.com/quinlan-lab/ccr)). We provide this file, obtained using gnomAD3.0 (GRCh38) variants and annotations with VEP101. Here you will find in one file the constraint for autosomes and X chromosome, although they were obtained separately ( please, refer to [Havrilla et al., 2019, Nature Genetics](https://doi.org/10.1038%2Fs41588-018-0294-6) and [GitHub](https://github.com/quinlan-lab/ccr) for further details) 
   
@@ -101,7 +101,7 @@ The following files are essential, are all provided in the ``data/`` folder and 
 
   - Pre-filtered and simplified GTF files from ENSEMBL (v101):
   
-  ``data/GTF101/Homo_sapiens.GRCh38.101.chr##.gtf.gz``
+  ``./data/GTF101/Homo_sapiens.GRCh38.101.chr##.gtf.gz``
     
   This is used to identify and select the protein coding [GENCODE basic transcripts](https://www.gencodegenes.org/human/) (version 35), a subset of representative transcripts for each human gene.
 
