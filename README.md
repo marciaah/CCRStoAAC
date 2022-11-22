@@ -46,22 +46,22 @@ From R, run the following commands:
 ## How to use
 
 #### Load the package
-> ``library(CCRStoAAC)``
+ ``library(CCRStoAAC)``
 
 #### Some examples on how to use this package:
 
 - Mapping CCRs for only one gene
->  ``CCRStoAAC( gene="VPS4B" )``
+  ``CCRStoAAC( gene="VPS4B" )``
  
 - Mapping CCRs for a list of three genes
-> ``CCRStoAAC( gene="WDR7,VAPA,VPS4B", gnomad_version="gnomAD3_0")``
+ ``CCRStoAAC( gene="WDR7,VAPA,VPS4B", gnomad_version="gnomAD3_0")``
 
 - Mapping CCRs for a complete chromosome, specifying 10 processors to run in parallel and starting from a previous
  output file (i.e. ./out/gnomAD3_0/vep_101/aac_weightedresiduals-cpg-synonymous-novariant_18.tsv). Useful when a previous run had stopped (e.g. memory overload)
-> ``CCRStoAAC( chromosome=18, nproc=10, keep=1 )``
+ ``CCRStoAAC( chromosome=18, nproc=10, keep=1 )``
 
 - Mapping of all genes in autosomes and X chromosome that have CCRs calculated
-> ``CCRStoAAC()`` 
+ ``CCRStoAAC()`` 
 
 
 ## Full list of parameters
