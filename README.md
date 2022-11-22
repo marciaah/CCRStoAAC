@@ -17,10 +17,11 @@ If you find this package useful for your work, please mention us:
 
 **Manuscript in Press:**
 
-*'Mapping the Constrained Coding Regions in the human genome to their corresponding proteins'*,
+*'Mapping the Constrained Coding Regions in the human genome to their corresponding proteins'*
+
 Marcia A. Hasenahuer, Alba Sanchis-Juan, Roman A. Laskowski, James A. Baker, James D. Stephenson, Christine A. Orengo,F Lucy Raymond, Janet M. Thornton.
-Available online 21 November 2022, 167892
-https://doi.org/10.1016/j.jmb.2022.167892
+
+Available online 21 November 2022, 167892, https://doi.org/10.1016/j.jmb.2022.167892
 
 ## Installation
 
