@@ -10,7 +10,7 @@ Description: An R Package for mapping the Human Constrained Coding Regions (CCRs
 License: `use_gpl3_license()` 
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.1
+RoxygenNote: 7.2.2
 Imports: 
       BiocManager,
       Gviz,
@@ -35,4 +35,3 @@ Imports:
       itertools,
       R.utils,
       stringr
-

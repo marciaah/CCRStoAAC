@@ -14,21 +14,15 @@ suppressMessages({
 #' coordinates (chromosomes 1-22 and X) to amino acid sites in protein sequences
 #' of UniProtKB, via reference annotated Ensembl transcripts of the GENCODE basic Project.
 #'
-#' The parameters are set to default in order to demonstrate the mapping of CCRs for 3 genes of chromosome 18,
-#' using as input the files organised in different sub-folders in the 'data/' directory of this package
+#' Mandatory input files are set by default and can be found in different sub-folders in the \emph{'./data/'} sub-directory of this package
 #'
 #' External dependencies (non R libraries):
-#'    blastp
-#'    awk
-#'    grep
-#'    tr
-#'    sort
+#'    \pkg{blastp, awk, grep, tr, sort}
 #'
-#'
-#' @param  gene Genes of interest, comma separated. Passing "all" (default) triggers the mapping of all genes in a chromosome
+#' @param  gene Genes of interest, comma separated. Not specifying triggers by default the mapping of all genes.
 #' @param  chromosome Only autosomes and X chromosome. Mandatory parameter.
 #' @param  nproc Number of cores for parallel processing
-#' @param  gnom_version gnomAD database version. Default is "gnomad3_0". It will be used for naming output files
+#' @param  gnomad_version gnomAD database version. Default is "gnomad3_0". It will be used for naming output files
 #' @param  ens_version Ensembl database version employed for annotating gnomAD VCF files. Will define the set of transcripts for the #' #' mapping
 #' @param  out_path Path to output folder
 #' @param  ccr_file Path to the raw CCRs file, obtained after running the CCRs pipeline
@@ -36,27 +30,32 @@ suppressMessages({
 #' @param  gtf_file Path to folder where Ensembl GTF files are, splitted by chromosome for an easier lookup
 #' @param  fastas Path to the folder where protein fasta files are/will be organized by chromosome (will be extended with 'chr')
 #' @param  keep keep=1 keeps previous output and resume after last mapped gene, keep=0 overwrites
+#' @param  logfile Path to a log file where the log of the run will be dumped. Defaul logfile="/dev/null" the output will be discarded (only works in UNIX systems)
 #'
-#' @return The function itself calls to do the mapping and saves the results to a file, returning nothing at it's end,
-#' this is because the mapping tables can be quite large for a whole chromosome for example
+#' @return The function itself calls to do the mapping and saves the results to a file (e.g. \emph{"./out/gnomAD3_0/vep_101/aac_weightedresiduals-cpg-synonymous-novariant_##.tsv"}), returning nothing at it's end.
+#' This is because the mapping tables can be quite large depending on the amount/length of the genes you requested.
+#' You can then read-in the output files by-chromosome, for that using \pkg{data.table::fread()} is highly recommended
 #'
 #' @examples
+#'  Mapping CCRs for only one gene
+#'  \code{CCRStoAAC( gene="VPS4B" )}
 #'
-#'  CCRStoAAC(gene="VPS4B",chromosome=18)
-#'  CCRStoAAC( gene="all",chromosome=18,out_path="out/",nproc=10)
-#'  CCRStoAAC( gene="WDR7,VAPA,VPS4B", chromosome=18,nproc=NULL, gnom_version="gnomAD3_0",
-#'  ens_version=101,out_path="out/",ccr_file="data/rawCCRs/gnomad3_0/vep101/sort_weightedresiduals-cpg-synonymous-novariant.txt.gz",
-#'  mapping_file="data/mapping_tables/ensembl_uniprot_MANE_metrics_07102020.tsv.gz",gtf="data/GTF101/",fastas="data/fastas",keep=0)
+#'  Mapping CCRs for complete chromosome, specifying 10 processors to run in parallel and starting from a previous
+#'  output file (i.e. \emph{./out/gnomAD3_0/vep_101/aac_weightedresiduals-cpg-synonymous-novariant_18.tsv})
+#'  \code{CCRStoAAC( chromosome=18, nproc=10, keep=1 )}
+#'
+#'  Mapping CCRs for a list of three genes
+#'  \code{CCRStoAAC( gene="WDR7,VAPA,VPS4B", gnomad_version="gnomAD3_0")}
 #'
 #' @export
-CCRStoAAC<-function(gene=NULL, chromosome=NULL, nproc=NULL, gnom_version="gnomAD3_0", ens_version=101,out_path="out/",
+CCRStoAAC<-function(gene=NULL, chromosome=NULL, nproc=NULL, gnomad_version="gnomAD3_0", ens_version=101,out_path="out/",
                     ccr_file="data/rawCCRs/gnomad3_0/vep101/sort_weightedresiduals-cpg-synonymous-novariant.txt.gz",
                     mapping_file="data/mapping_tables/ensembl_uniprot_MANE_metrics_07102020.tsv.gz",
                     gtf="data/GTF101/",
                     fastas="data/fastas",
-                    keep=0)
+                    keep=0,
+                    logfile="/dev/null")
 {
-
   #Avoid scientific notation, otherwise genomic positions with a big number might be printed out in scientific notation
   options(scipen=999)
   #Suppressing warnings
@@ -69,7 +68,7 @@ CCRStoAAC<-function(gene=NULL, chromosome=NULL, nproc=NULL, gnom_version="gnomAD
   # gene<-"VAPA"
   # chromosome=18
   # nproc=10
-  # gnom_version="gnomAD3_0"
+  # gnomad_version="gnomAD3_0"
   # ens_version=101
   # out_path="out/"
   # ccr_file="data/rawCCRs/gnomad3_0/vep101/sort_weightedresiduals-cpg-synonymous-novariant.txt.gz"
@@ -101,16 +100,16 @@ CCRStoAAC<-function(gene=NULL, chromosome=NULL, nproc=NULL, gnom_version="gnomAD
     if(!is.null(gene) & is.null(chromosome)){
 
       mapgene<-unlist(strsplit(gene, ","))
-      cat("|-----------'gene' were provided.\nWill try to obtain chromosomes from the CCRs file\n\n")
+      cat("|-----------'gene' was provided.\nWill try to obtain chromosome(s) from the CCRs file\n\n")
       ccr<-getRawCCRs(ccr_file,gene = mapgene)
-      #ext<-"gene"
+
       }else{
         #If gene was not provided, but chromosome was, it will be pulled from the CCRs file
         if(is.null(gene) & !is.null(chromosome)){
         chr<-unlist(strsplit(as.character(chromosome), ","))
-        cat("|-----------'chromosome' were provided.\nWill try to obtain 'gene' from the CCRs file\n\n")
+        cat("|-----------'chromosome' was provided.\nWill try to obtain 'gene' from the CCRs file\n\n")
         ccr<-getRawCCRs(ccr_file,chr = chr)
-        #ext<-"chr"
+
         }else{
           #If both gene and chromosome were provided, I'll use only the gene and get the chromosomes from the CCRs file
           if(!is.null(gene) & !is.null(chromosome)){
@@ -118,7 +117,7 @@ CCRStoAAC<-function(gene=NULL, chromosome=NULL, nproc=NULL, gnom_version="gnomAD
             mapgene<-unlist(strsplit(gene, ","))
             cat("|-----------'gene' and 'chromosome' were provided.\nWill only use 'gene' and obtain chr from the CCRs file\n\n")
             ccr<-getRawCCRs(ccr_file,gene = mapgene)
-            #ext<-"chr"
+
           }
         }
       }
@@ -128,23 +127,12 @@ CCRStoAAC<-function(gene=NULL, chromosome=NULL, nproc=NULL, gnom_version="gnomAD
   gene_chr<-unique(ccr[,c("gene","chrom")])
 
 
-  # if(mapgene=="all"){
-  #
-  #   #all genes of the chr in the raw ccrs file will be mapped
-  #   g <- unique(subset(ccr, chrom==chr,select = gene))
-  #
-  # }else{
-  #   #only mapping a list of genes (1 or n)
-  #   g <- unique(subset(ccr, chrom==chr & gene %in% mapgene,select = gene))
-  # }
-
-
-
   ### Going by chromose and by gene and calling the mapping
-
   if(!is.null(gene_chr)){
 
+    #Going by chromosome
     for (chr in unique(gene_chr$chr)){
+
 
     #protein fasta sequences will be downloaded and saved organized by chromosome,
     #check if folders exist and create them
@@ -169,7 +157,7 @@ CCRStoAAC<-function(gene=NULL, chromosome=NULL, nproc=NULL, gnom_version="gnomAD
     gtf_file<-paste(gtf,"/Homo_sapiens.GRCh38.",ens_version,".chr",chr,".gtf.gz",sep="")
 
     #Setting the path where the output mapping will be saved
-    outfile <- paste(out_path,gnom_version,"/vep_",ens_version,"/aac_weightedresiduals-cpg-synonymous-novariant_",chr,".tsv",sep="")
+    outfile <- paste(out_path,gnomad_version,"/vep_",ens_version,"/aac_weightedresiduals-cpg-synonymous-novariant_",chr,".tsv",sep="")
 
     ### LOADING THE EnsDb and filtering to the chromosome of interest
     # supply version of interest (ens_version=101 for replicating our analysis)
@@ -179,20 +167,8 @@ CCRStoAAC<-function(gene=NULL, chromosome=NULL, nproc=NULL, gnom_version="gnomAD
     ### GET THE MAPPING OF IDS for this chromosome
     gencode_basic_uniprot<-getIDs( mapping_file,gtf_file,chr,ens_version)
 
-    ## write the header for the output file
-    # only if the request is to map only one gene, the name of such gene will be in
-    # the file name.
-    #if(length(mapgene)==1 & mapgene!="all"){
-    # if(ext=="chr"){
-    #   outfile <- paste(out_path,gnom_version,"/vep_",ens_version,"/aac_weightedresiduals-cpg-synonymous-novariant_",chr,".tsv",sep="")
-    #   }else{
-    #       if(ext=="gene"){
-    #         outfile <- paste(out_path,gnom_version,"/vep_",ens_version,"/aac_weightedresiduals-cpg-synonymous-novariant_",chr,"_",g,".tsv",sep="")
-    #        }
-    #
-
-    outsubfolder<-paste(out_path,gnom_version,"/vep_",ens_version,sep="")
-    outfolder<-paste(out_path,gnom_version,sep="")
+    outsubfolder<-paste(out_path,gnomad_version,"/vep_",ens_version,sep="")
+    outfolder<-paste(out_path,gnomad_version,sep="")
     #First create the out/gnomad_###/vep_###/ folder structure, if it doesn't exist already
     tryCatch(if(!dir.exists(outfolder)) { dir.create(outfolder) },
              error=function(e) {
@@ -214,7 +190,11 @@ CCRStoAAC<-function(gene=NULL, chromosome=NULL, nproc=NULL, gnom_version="gnomAD
     # k=0  parameter overwrites previous outputs, k=1 identifies genes that were already mapped
     # from a previous output and attempts to start from there
     if(k==0){
-      header <- paste("chr","pos","ensembl_gene_name","strand","ensembl_gene_id","weighted_pct","simple_uniprot_id_SP_C","ensembl_transcript_id-ensembl_protein_id-uniprot_id-pos-aac_SP_C","ensembl_transcript_id-ensembl_protein_id-uniprot_id-pos-aac_SP","ensembl_transcript_id-ensembl_protein_id-uniprot_id-pos-aac_TR","ensembl_transcript_id-ensembl_protein_id-uniprot-id-pos-aac_NM","chr-start-end-ensembl_gene_name",sep="\t")
+      header <- paste("chr","pos","ensembl_gene_name","strand","ensembl_gene_id","weighted_pct","simple_uniprot_id_SPC",
+                      "ensembl_transcript_id__ensembl_protein_id__uniprot_id__pos__aac__SPC","ensembl_transcript_id__ensembl_protein_id__uniprot_id__pos__aac_SP",
+                      "ensembl_transcript_id__ensembl_protein_id__uniprot_id__pos__aac_TR",
+                      "ensembl_transcript_id__ensembl_protein_id__uniprot_id__pos__aac__NM",
+                      "chr_start__end__ensembl_gene_name",sep="\t")
       write(header, outfile,append = F)} else if(k==1) {
         message(paste("Resuming from previous ",outfile,sep=" "))
         previous<-data.table::fread(outfile)
@@ -225,7 +205,7 @@ CCRStoAAC<-function(gene=NULL, chromosome=NULL, nproc=NULL, gnom_version="gnomAD
         g<-NULL
 
         gene_chr<-gene_chr[gene_chr$gene %in% newgenes,]
-        #g$gene<-newgenes
+
       }
 
 
@@ -234,7 +214,7 @@ CCRStoAAC<-function(gene=NULL, chromosome=NULL, nproc=NULL, gnom_version="gnomAD
 
     #if any gene to process
     if(length(gene_chr$gene)>0){
-      tryCatch( byGene(gene_chr[gene_chr$chrom==chr,],gencode_basic_uniprot,edb,ccr,outfile,chr,fastafolder,ens_version,np),
+      tryCatch( ccrs_aac<-byGene(gene_chr[gene_chr$chrom==chr,],gencode_basic_uniprot,edb,ccr,outfile,chr,fastafolder,ens_version,np,logfile),
                 error = function(e){
                   message(paste("\nERROR: Failed doing the mapping for your genes. \nbyGene() returned:\n"))
                   message(e)
@@ -250,12 +230,11 @@ CCRStoAAC<-function(gene=NULL, chromosome=NULL, nproc=NULL, gnom_version="gnomAD
 
     #Free up some memory space
     suppressMessages(gc())
-
-    cat("\nDone!\n")
-
-  }
-  }
-}
+   } #End of going by chromosome
+  }#End of if there are genes to map
+  cat("\n\nDone!\n\n")
+  invisible()
+} #End of CCRStoAAC()
 
 #getEnsDB----
 #' @title getEnsDB
@@ -378,7 +357,6 @@ getIDs <- function( mapping_file,gtf_file,chr,ens_version) {
   # Make sure you splitted the original Homo_sapiens.GRCh##.###.gtf by chr
   # using the splitGTFbyChr.sh script
 
-  #file <- paste(gtf_file, "Homo_sapiens.GRCh38.",ens_version,".chr",chr,".gtf.gz",sep="")
   gtf <- rtracklayer::import(con=gtf_file)
   gtf_df<-as.data.frame(gtf)
 
@@ -410,10 +388,6 @@ getIDs <- function( mapping_file,gtf_file,chr,ens_version) {
 getENSPseq<-function(ensembl_protein_id,file,gen_pad){
 
   cat(paste(gen_pad,"|-----------Obtaining FASTA sequence for ",ensembl_protein_id," from Ensembl\nSequence will be in ",file,"\n",sep=""))
-
-
-
-
 
 
   requestURL <- paste("https://rest.ensembl.org/sequence/id/",ensembl_protein_id,"?",sep="")
@@ -512,7 +486,7 @@ getUniPseq<-function(uniprot_blastp_ids,gencode_basic_uniprot,file,gen_pad){
 # positions, and adds the corresponding UniProtAcc identifier, positions and amino acids
 #'
 #' @param uniprot_blastp_id The UniProtKB identifier of a protein sequence
-#'  to download in fasta format
+#' to download in fasta format
 #' @param fastafolder The location of the  *.fasta sequences
 #' @param gencode_basic_uniprot Mapping table, related identifiers will be taken from here
 #' @param gnm database connection, generated with with 'ensembldb'
@@ -530,8 +504,6 @@ mapping <- function(gnm,bysite,selectedtx,gencode_basic_uniprot,blast_matches_se
   #Suppressing warnings
   options(warn=-1)
 
-
-
   cat("|-----------Doing the mapping via the selected transcripts\n")
 
   # database connections need to be established and filtered in each child process,
@@ -540,7 +512,6 @@ mapping <- function(gnm,bysite,selectedtx,gencode_basic_uniprot,blast_matches_se
   #Calling functions defined here inside function that is running in child processes is not working,
   #It triggers : << task 1 failed - "could not find function "getEnsDB">>
   #edb<-getEnsDB(ens_version,chr)
-  #This is the code of getEnsDB
 
   cat(paste("|-----------Loading Ensembl v",ens_version," for Human  (process ID: ",Sys.getpid(),"@",Sys.info()[['nodename']]," )\n",sep=""))
 
@@ -606,7 +577,6 @@ mapping <- function(gnm,bysite,selectedtx,gencode_basic_uniprot,blast_matches_se
           #ENSG associated ENST
           txs <- as.data.frame(transcripts(edbxx, filter = GeneIdFilter(gene_id)))
 
-
           for(tx in txs$tx_id){
             if(tx %in% small$ensembl_transcript_id[small$pos==pos]) #if ENST associated to position
             {
@@ -628,7 +598,6 @@ mapping <- function(gnm,bysite,selectedtx,gencode_basic_uniprot,blast_matches_se
 
       }
     }
-
 
 
     #creating a column of NAs for ensembl protein ids (ENSP)
@@ -710,9 +679,9 @@ mapping <- function(gnm,bysite,selectedtx,gencode_basic_uniprot,blast_matches_se
 
 
   mapped_tr<-data.frame(pos=NA,ensembl_gene_id.x=NA,strand.x=NA,ensembl_transcript_id=NA,ensembl_protein_id.x=NA,ensembl_protein_id.y=NA,ensembl_aa_pos=NA,ensembl_aa=NA,uniprot_blastp_id=NA)
-  mapped_sp<-data.frame(pos=NA,ensembl_gene_id.x=NA,strand.x=NA,ensembl_transcript_id=NA,ensembl_protein_id.x=NA,ensembl_protein_id.y=NA,ensembl_aa_pos=NA,ensembl_aa=NA,uniprot_blastp_id=NA)
-  mapped_spc<-data.frame(pos=NA,ensembl_gene_id.x=NA,strand.x=NA,ensembl_transcript_id=NA,ensembl_protein_id.x=NA,ensembl_protein_id.y=NA,ensembl_aa_pos=NA,ensembl_aa=NA,uniprot_blastp_id=NA)
-  mapped_nm<-data.frame(pos=NA,ensembl_gene_id.x=NA,strand.x=NA,ensembl_transcript_id=NA,ensembl_protein_id.x=NA,ensembl_protein_id.y=NA,ensembl_aa_pos=NA,ensembl_aa=NA,uniprot_blastp_id=NA)
+  mapped_sp<-mapped_tr
+  mapped_spc<-mapped_tr
+  mapped_nm<-mapped_tr
 
 
   #If there are informative rows out of merging the mapping and the gencode_basic_uniprot mapping, for each type of UniProt identifier
@@ -733,19 +702,7 @@ mapping <- function(gnm,bysite,selectedtx,gencode_basic_uniprot,blast_matches_se
   if(nrow(subset(merge(x=mapped,y=gencode_basic_uniprot,by=c("ensembl_transcript_id"),all.x=T),ensp_uniprot_blastp_match=="no_match" ,select=c(chr,pos,ensembl_gene_id.x,strand.x,ensembl_transcript_id,ensembl_protein_id.x,ensembl_aa_pos,ensembl_aa,uniprot_blastp_id)))){
     mapped_nm<-subset(merge(x=mapped,y=gencode_basic_uniprot,by=c("ensembl_transcript_id"),all.x=T),ensp_uniprot_blastp_match=="no_match",select=c(chr,pos,ensembl_gene_id.x,strand.x,ensembl_transcript_id,ensembl_protein_id.x,ensembl_aa_pos,ensembl_aa,uniprot_blastp_id))}
 
-
-  #For cases where more than one ENSG ID are assigned to one gene_name (HGNC Symbol) (e.g. TBCE in chr 1 has ENSG00000284770 and ENSG00000285053)
-  #if(length(unique(gencode_basic_uniprot$gene_id[gencode_basic_uniprot$gene_name==unique(bysite$gene)])) == 1){
-  #mapped$gene_id<-unique(gencode_basic_uniprot$gene_id[gencode_basic_uniprot$gene_name==unique(bysite$gene)] )
-  #}else{
-  # geneid_tx<-unique(subset(gencode_basic_uniprot, gene_name==bysite$gene,select = c(gene_id,transcript_id)))
-  #mapped$gene_id<-paste(unique(geneid_tx$gene_id[geneid_tx$transcript_id==mapped$transcript_id]),collapse = ",")
-  #mapped$gene_id<-paste(unique(gencode_basic_uniprot$gene_id[gencode_basic_uniprot$gene_name==unique(bysite$gene) & gencode_basic_uniprot$transcript_id[gencode_basic_uniprot$transcript_id==mapped$transcript_id] ]),collapse=",")
-
-  #}
-
-
-
+  #WARNING: might be cases where more than one ENSG ID are assigned to one gene_name (HGNC Symbol) (e.g. TBCE in chr 1 has ENSG00000284770 and ENSG00000285053)
 
   #Renaming columns. Merge adds ".x", ".y" etc when the merged tables have columns
   #with same name
@@ -947,13 +904,17 @@ mapping <- function(gnm,bysite,selectedtx,gencode_basic_uniprot,blast_matches_se
   final_result$map_tr[is.na(final_result$map_tr)]<-"NA,NA,NA,NA,NA,NA,NA"
 
 
+
   #order the columns
   final_result<-unique(final_result[,c("chrom","pos","gene","strand","ensembl_gene_id","weighted_pct","simple_spc","map_spc","map_sp","map_tr","map_nm","chrom_start_end_gen")])
 
   cat("Returning mapped CCRs (process ID: ",Sys.getpid(),"@",Sys.info()[['nodename']]," )")
+
+  message(head(final_result))
+
   return(final_result)
   #return(gnm_prt_pos_colapsed)
-}
+}#End of mapping()
 
 
 
@@ -1064,45 +1025,68 @@ matchedProteinSeqs <- function(ensembl_gene_ids,gencode_basic_uniprot,fastafolde
 #' @title byGene
 #' @description Goes gene-by-gene in your list, calling the mapping of positions
 #' This function will do parallel calls to 'np' processors, dividing 'bysite' in chunks
-#' among them
+#' among them. Finally, it will dump the extended resulting mappings to all GENCODE basic
+#' transcripts, and return a file with only the mappings for UniProt/SP canonical sequences
 #'
 #'
-#' @param genes Your list of genes
+#' @param genes Your full list of genes
+#' @param chr The corresponding chromosome of the genes
 #' @param gencode_basic_uniprot Mapping table, Ensembl and UniProtKB identifiers will be taken from here
 #' @param fastafolder will check if the protein sequences are already here, if not donwload
 #' @param ens_version version of Ensembl
-#' @param chr chromosome of interest
 #' @param edb a ensembldb database connection
 #' @param ccr the CCRs dataframe with sites, CCRs percentiles, etc
 #' @param outfile the output file
 #' @param np number of proceses to run in parallel
+#' @param logfile logfile for the run, default is "/dev/null"
 #' @return A dataframe with final mapping
 #' @importFrom foreach %dopar%
 #' @importFrom usethis use_pipe
 #' @export
-byGene <- function(genes,gencode_basic_uniprot,edb,ccr,outfile,chr,fastafolder,ens_version,np){
+byGene <- function(genes,gencode_basic_uniprot,edb,ccr,outfile,chr,fastafolder,ens_version,np,logfile){
   #usethis::use_pipe()
   #Free up some memory
-  gc()
+  suppressMessages(gc())
 
   #Avoid scientific notation, otherwise genomic positions with a big number might be printed out in scientific notation
   options(scipen=999)
   #Suppressing warnings
   options(warn=-1)
 
+  #The mapping for only UniProt/SwissProt canonical sequences
+  #this will be returned to the user as output from calling CCRStoAAC()
+  #Here, the CCRs percentile ('weighted_pct') will be in two columns, one for
+  spc_mapping<-data.frame(chr=NA,
+                          pos=NA,
+                          ensembl_gene_name=NA,
+                          ensembl_gene_id=NA,
+                          ensembl_transcript_id=NA,
+                          ensembl_protein_id=NA,
+                          ensembl_protein_pos=NA,
+                          ensembl_protein_aac=NA,
+                          uniprot_id=NA,
+                          uniprot_pos=NA,
+                          uniprot_aac=NA,
+                          base_weighted_pct=NA,
+                          aac_weighted_pct=NA,
+                          chr__start__end__ensembl_gene_name=NA
+                          )
 
 
   cat(paste("|-----------Going through your list of genes:","\nChromosome: ",chr,"\nGenes: ",paste(unique(genes$gene),collapse=",") , "\n\n"))
 
+  #TODO:
+  # The mapping could be optimized by sending complete genes to process in one processor.
+  # ATM we're splitting the genomic positions of each gene between 'np', this might not be very efficient,
+  # because each child process needs to load ensembldb and that consumes time!
+
   for ( gen in unique(genes$gene))
   {
-    #DEBUG:
-    #gen<-"VAPA"
 
     cat(paste(gen," ...\n"))
 
     #This is just to print the name of your genes while they are being processed
-    gen_pad<-stringr::str_pad(gen,width=15, side = "right") #width=15, because the longest gene name has 15 characters
+    gen_pad<-stringr::str_pad(gen,width=15, side = "right") #width=15, because the longest gene name has 15 characters, keep one eye on this
 
     #get the list of GENCODE_basic transcripts for this gene
     selectedtx<-unique(subset(gencode_basic_uniprot, ensembl_gene_name==gen,select = c(ensembl_gene_id,ensembl_transcript_id))) #"ENST00000342175"
@@ -1151,14 +1135,15 @@ byGene <- function(genes,gencode_basic_uniprot,edb,ccr,outfile,chr,fastafolder,e
 
     bysitedf<-abit %>% dplyr::mutate(pos=purrr::map2(s,e,~seq(.x,.y,by=1))) %>% tidyr::unnest(pos)
 
-    #logfile<-paste("log_chr",chr,"_",gsub(":","-",gsub(" ","_",Sys.time())),".txt",sep="")
+    #outfile is where all the messages from the child processes will be dumped, two options:
 
-    #comment this for running in serial mode (not parallel)
-    #outfile will be where all the messages from the child processes will be dumped
-    cl <- parallel::makeCluster(np, outfile="/dev/null", setup_strategy = "sequential")
+    #1)sending outfile to /dev/null, i.e. the output will be discarded, only works in UNIX systems
+    cl <- parallel::makeCluster(np, outfile=logfile, setup_strategy = "sequential")
+
+    #2)sending outfile to ./runlog, a file that will be created in the main folder of CCRStoAAC package
+    #cl <- parallel::makeCluster(np, outfile="./runlog", setup_strategy = "sequential")
     doParallel::registerDoParallel(cl)
 
-    #writeLines(c(""), logfile)
     results<- NULL
     pos_col<-which(colnames(bysitedf)=="pos")
     cat(paste(gen_pad,"|-----------Doing the mapping in parallel using ", np," cores.... (be patient)\n",sep=""))
@@ -1167,23 +1152,23 @@ byGene <- function(genes,gencode_basic_uniprot,edb,ccr,outfile,chr,fastafolder,e
       #Sending chunks avoids having to load and filter the EnsDb.Hsapiens.v## so many times, as it would be done by sending one line at the time
       results <- foreach::foreach(chunk=itertools::isplitRows(bysitedf,chunks=np), .packages = c('dplyr','AnnotationHub','ensembldb','R.utils','sjmisc','data.table'), .export=c('mapping'), .combine=rbind) %dopar% {
 
-        #Creating the genomic ranges that will be mapped to amino acids
-        gnm <- GenomicRanges::GRanges(chr, IRanges::IRanges(start = as.numeric(unlist(chunk[,pos_col])), width = 1))
+      #Creating the genomic ranges that will be mapped to amino acids
+      gnm <- GenomicRanges::GRanges(chr, IRanges::IRanges(start = as.numeric(unlist(chunk[,pos_col])), width = 1))
 
-        #Dump into a logfile the messages from functions called in parallel
-        #sink(logfile, append=TRUE)
-
-        #Call to map the genomic ranges to amino acids
-        suppressWarnings(suppressPackageStartupMessages(mapping(gnm,chunk,selectedtx,gencode_basic_uniprot,blast_matches_seq,fastafolder,ens_version,chr)))
+      #Call mapping() to map the genomic ranges to amino acids
+      suppressWarnings(suppressPackageStartupMessages(mapping(gnm,chunk,selectedtx,gencode_basic_uniprot,blast_matches_seq,fastafolder,ens_version,chr)))
       }
     )
 
     #comment this if running in serial
     parallel::stopCluster(cl)
 
-    #FINALLY dump the results of this gene to a per-chr file
+    #FINALLY dump the full mapping of this gene/s to GENCODE basic transcripts in a by-chromosome file
+    write.table(results, outfile, row.names = F, col.names = F,quote = F, sep = "\t", append = T)
+
+
     #printout gene progress
     cat(paste(gen_pad,"|-----------OK!\n",sep=""))
-  } #end of going gene by gene
-}
+  } #end of the cycle going gene by gene
+} #end of byGene()
 

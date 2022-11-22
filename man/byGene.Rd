@@ -13,11 +13,12 @@ byGene(
   chr,
   fastafolder,
   ens_version,
-  np
+  np,
+  logfile
 )
 }
 \arguments{
-\item{genes}{Your list of genes}
+\item{genes}{Your full list of genes}
 
 \item{gencode_basic_uniprot}{Mapping table, Ensembl and UniProtKB identifiers will be taken from here}
 
@@ -27,13 +28,15 @@ byGene(
 
 \item{outfile}{the output file}
 
-\item{chr}{chromosome of interest}
+\item{chr}{The corresponding chromosome of the genes}
 
 \item{fastafolder}{will check if the protein sequences are already here, if not donwload}
 
 \item{ens_version}{version of Ensembl}
 
 \item{np}{number of proceses to run in parallel}
+
+\item{logfile}{logfile for the run, default is "/dev/null"}
 }
 \value{
 A dataframe with final mapping
@@ -41,5 +44,6 @@ A dataframe with final mapping
 \description{
 Goes gene-by-gene in your list, calling the mapping of positions
 This function will do parallel calls to 'np' processors, dividing 'bysite' in chunks
-among them
+among them. Finally, it will dump the extended resulting mappings to all GENCODE basic
+transcripts, and return a file with only the mappings for UniProt/SP canonical sequences
 }
