@@ -96,12 +96,14 @@ The following files are essential, are all provided in the ``data/`` folder and 
   - A file with the mapping table that provides the correspondence of identifiers between [UniProtKB](https://www.uniprot.org/) (version 10-2020) and [ENSEMBL](https://www.ensembl.org/index.html) (version 101):
   
   ``./data/mapping_tables/ensembl_uniprot_MANE_metrics_07102020.tsv.gz``
-    Here you can also find the identification of [MANE transcripts](https://www.ncbi.nlm.nih.gov/refseq/MANE/) and the [gene constraint scores](https://gnomad.broadinstitute.org/help/constraint) (i.e. pLI, OEUF, o/e, Z-scores) of gnomAD2.1 for genes and transcript, when available.
+    
+  Here you can also find the identification of [MANE transcripts](https://www.ncbi.nlm.nih.gov/refseq/MANE/) and the [gene constraint scores](https://gnomad.broadinstitute.org/help/constraint) (i.e. pLI, OEUF, o/e, Z-scores) of gnomAD2.1 for genes and transcript, when available.
 
   - Pre-filtered and simplified GTF files from ENSEMBL (v101):
   
   ``data/GTF101/Homo_sapiens.GRCh38.101.chr##.gtf.gz``
-    This is used to identify and select the protein coding [GENCODE basic transcripts](https://www.gencodegenes.org/human/) (version 35), a subset of representative transcripts for each human gene.
+    
+  This is used to identify and select the protein coding [GENCODE basic transcripts](https://www.gencodegenes.org/human/) (version 35), a subset of representative transcripts for each human gene.
 
 ## Output files
 
